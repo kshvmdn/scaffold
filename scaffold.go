@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	_ "os/exec"
 	"regexp"
 	"strings"
 )
@@ -56,24 +57,36 @@ func traverseDirectory(rootPtr *Folder, contents []string) {
 	}
 }
 
-func formMkdirString(rootPtr *Folder) string {
+func mkdir(rootPtr *Folder) string {
 	if len(rootPtr.Folders) == 0 {
 		return rootPtr.Name
-	}
-
-	// In the case that there is one subdir, we want to avoid adding braces since
-	// mkdir treats these as part of the directory name.
-	if len(rootPtr.Folders) == 1 {
-		return fmt.Sprintf("%s/%s", rootPtr.Name, formMkdirString(&rootPtr.Folders[0]))
 	}
 
 	mkdirString := fmt.Sprintf("%s/{", rootPtr.Name)
 
 	for _, folder := range rootPtr.Folders {
-		mkdirString += fmt.Sprintf("%s,", formMkdirString(&folder))
+		mkdirString += fmt.Sprintf("%s,", mkdir(&folder))
 	}
 
-	return fmt.Sprintf("%s}", strings.TrimRight(mkdirString, ","))
+	return fmt.Sprintf("%s}", mkdirString)
+}
+
+func touch(rootPtr *Folder) string {
+	if len(rootPtr.Files) == 0 && len(rootPtr.Folders) == 0 {
+		return ""
+	}
+
+	touchString := fmt.Sprintf("%s/{", rootPtr.Name)
+
+	for _, file := range rootPtr.Files {
+		touchString += fmt.Sprintf("%s,", file.Name)
+	}
+
+	for _, folder := range rootPtr.Folders {
+		touchString += fmt.Sprintf("%s,", touch(&folder))
+	}
+
+	return fmt.Sprintf("%s}", touchString)
 }
 
 func main() {
@@ -91,11 +104,19 @@ func main() {
 
 	contents := parseFileContents(*configPtr)
 
-	// Trim trailing `/` on directory name
-	rootPtr := &Folder{strings.TrimRight(*directoryPtr, "/"), []File{}, []Folder{}}
+	// Trim trailing `/` on directory name, this is added when forming the mkdir command later
+	directory := strings.TrimRight(*directoryPtr, "/")
+	rootPtr := &Folder{directory, []File{}, []Folder{}}
 
 	traverseDirectory(rootPtr, contents)
 
-	mkdirString := formMkdirString(rootPtr)
-	fmt.Println(mkdirString)
+	mkdirCmd := mkdir(rootPtr)
+	touchCmd := touch(rootPtr)
+
+	fmt.Printf("mkdir -p %s; touch %s\n", mkdirCmd, touchCmd)
+
+	// err := exec.Command("mkdir", "-p", mkdirCmd, "; ", "touch", touchCmd).Run()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 }
