@@ -6,10 +6,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	_ "path"
 	"regexp"
 	"strings"
-	_ "sync"
 )
 
 type File struct {
@@ -27,11 +25,10 @@ func parseFileContents(path string) []string {
 	if err != nil {
 		log.Fatal(err)
 	}
-	contents := string(b)
-	return strings.Split(contents, "\n")
+	return strings.Split(string(b), "\n")
 }
 
-func walkDirectoryStructure(rootPtr *Folder, contents []string) {
+func traverseDirectory(rootPtr *Folder, contents []string) {
 	for _, element := range contents {
 		if strings.TrimSpace(element) == "" {
 			continue
@@ -52,11 +49,31 @@ func walkDirectoryStructure(rootPtr *Folder, contents []string) {
 		}
 
 		if isDirectory {
-			current.Folders = append(current.Folders, Folder{element, []File{}, []Folder{}})
+			current.Folders = append(current.Folders, Folder{strings.TrimRight(element, "/"), []File{}, []Folder{}})
 		} else {
 			current.Files = append(current.Files, File{element})
 		}
 	}
+}
+
+func formMkdirString(rootPtr *Folder) string {
+	if len(rootPtr.Folders) == 0 {
+		return rootPtr.Name
+	}
+
+	// In the case that there is one subdir, we want to avoid adding braces since
+	// mkdir treats these as part of the directory name.
+	if len(rootPtr.Folders) == 1 {
+		return fmt.Sprintf("%s/%s", rootPtr.Name, formMkdirString(&rootPtr.Folders[0]))
+	}
+
+	mkdirString := fmt.Sprintf("%s/{", rootPtr.Name)
+
+	for _, folder := range rootPtr.Folders {
+		mkdirString += fmt.Sprintf("%s,", formMkdirString(&folder))
+	}
+
+	return fmt.Sprintf("%s}", strings.TrimRight(mkdirString, ","))
 }
 
 func main() {
@@ -74,8 +91,11 @@ func main() {
 
 	contents := parseFileContents(*configPtr)
 
-	rootPtr := &Folder{*directoryPtr, []File{}, []Folder{}}
-	walkDirectoryStructure(rootPtr, contents)
+	// Trim trailing `/` on directory name
+	rootPtr := &Folder{strings.TrimRight(*directoryPtr, "/"), []File{}, []Folder{}}
 
-	fmt.Println(*rootPtr)
+	traverseDirectory(rootPtr, contents)
+
+	mkdirString := formMkdirString(rootPtr)
+	fmt.Println(mkdirString)
 }
