@@ -4,7 +4,9 @@ Bootstrap full directories with text-based template files.
 
 ### Installation
 
-  ```
+  - Use the following to install and run (assumes you have Go [installed](https://golang.org/doc/install) and [configured](https://golang.org/doc/install#testing)):
+
+  ```sh
   $ go get github.com/kshvmdn/scaffold
   $ scaffold --config=<PATH/TO/CONFIG_FILE> --directory=<PATH/TO/DIRECTORY>
   ```
@@ -87,7 +89,8 @@ Bootstrap full directories with text-based template files.
 
 #### Structure Specifications
 
-  - Use a line-break and 2 **spaces** to represent directory contents.
+  - Use a line-break and two **spaces** to represent a directory's contents (every two spaces = a single level of nesting).
+  - Directory names must end with a single forward slash (`/`).
 
 ### Contribute
 
