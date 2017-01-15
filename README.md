@@ -1,6 +1,6 @@
 ## scaffold
 
-Bootstrap full directories with text-based template files.
+Create full directories using text-based template files.
 
 ### Installation
 
@@ -8,20 +8,21 @@ Bootstrap full directories with text-based template files.
 
   ```sh
   $ go get github.com/kshvmdn/scaffold
-  $ scaffold --config=<PATH/TO/CONFIG_FILE> --directory=<PATH/TO/DIRECTORY>
+  $ scaffold -template=<PATH/TO/TEMPLATE_FILE.txt> -directory=<PATH/TO/DIRECTORY>
   ```
 
   - You can also build from source if you prefer that:
 
   ```sh
   $ git clone https://github.com/kshvmdn/scaffold.git
+  $ cd scaffold
   $ go build scaffold.go
-  $ ./scaffold --config=<PATH/TO/CONFIG_FILE> --directory=<PATH/TO/DIRECTORY>
+  $ ./scaffold -template=<PATH/TO/TEMPLATE_FILE.txt> -directory=<PATH/TO/DIRECTORY>
   ```
 
 ### Usage
 
-  - Run `--help` for a help menu.
+  - Run `--help` for the help menu.
 
     ```sh
     $ scaffold --help
@@ -32,18 +33,17 @@ Bootstrap full directories with text-based template files.
           Root directory (default ".")
     ```
 
-  - Provide the script with a path to your configuration file (the directory structure, see `school.txt` below) and an optional directory name. The script will print a line that you'll have to copy and paste into your shell (if you're interested in why, see [#1](https://github.com/kshvmdn/scaffold/issues/1), _help wanted with this!_).
+  - Provide the script with a template file (the directory structure, see [`example.txt`](example.txt)) and an optional directory name.
 
     ```sh
-    $ scaffold --config=school.txt --directory=~/Desktop/csc263
-    mkdir -p ~/Desktop/csc263/{assignments/{a1,a2,a3,a4,tests/{t1,t2,},exam,misc/{textbook,previous-offerings,},},}; touch ~/Desktop/csc263/{assignments/{a1/{a1.tex,},a2/{a2.tex,},a3/{a3.tex,},a4/{a4.tex,},tests/{,,},exam/{coverage.md,},misc/{,,},},}
+    $ scaffold -template=example.txt -directory=~/Desktop/course
     ```
 
-  - After copying and pasting the above:
+  - After running the above:
 
     ```sh
-    $ tree ~/Desktop/csc263
-    /Users/kashavmadan/Desktop/csc263/
+    $ tree ~/Desktop/course
+    /Users/kashavmadan/Desktop/course/
     ├── assignments
     │   ├── a1
     │   │   └── a1.tex
@@ -57,41 +57,22 @@ Bootstrap full directories with text-based template files.
     │   └── coverage.md
     ├── misc
     │   ├── previous-offerings
+    │   │   ├── 2015
+    │   │   └── 2016
+    │   │       └── 2016_exam.docx
     │   └── textbook
     └── tests
         ├── t1
         └── t2
 
-    12 directories, 5 files
-    ```
-
-  - The `school.txt` file that was used:
-
-    ```txt
-    assignments/
-      a1/
-        a1.tex
-      a2/
-        a2.tex
-      a3/
-        a3.tex
-      a4/
-        a4.tex
-    tests/
-      t1/
-      t2/
-    exam/
-      coverage.md
-    misc/
-      textbook/
-      previous-offerings/
+    14 directories, 6 files
     ```
 
 #### Structure Specifications
 
-  - Use a line-break and two **spaces** to represent a directory's contents (every two spaces = a single level of nesting).
-  - Directory names must end with a single forward slash (`/`).
+  - Use a line-break and two **spaces** to indicate directory subcontents (each pair of two spaces represents a single level of nesting).
+  - Directory names must end with a single forward slash (`/`). Files can be named anything.
 
 ### Contribute
 
-  This project is completely open source. Feel free to open an issue or submit a pull request.
+This project is completely open source. Feel free to open an issue or submit a pull request.
