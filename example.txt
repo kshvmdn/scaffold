@@ -1,0 +1,20 @@
+assignments/
+  a1/
+    a1.tex
+  a2/
+    a2.tex
+  a3/
+    a3.tex
+  a4/
+    a4.tex
+tests/
+  t1/
+  t2/
+exam/
+  coverage.md
+misc/
+  textbook/
+  previous-offerings/
+    2015/
+    2016/
+      2016_exam.docx
