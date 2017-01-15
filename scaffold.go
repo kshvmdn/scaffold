@@ -70,7 +70,6 @@ func recursivelyFormPathList(dirPtr *Folder, parent string) []Path {
 	}
 
 	parentPath := Path{parent, true}
-
 	paths := []Path{parentPath}
 
 	for _, file := range dirPtr.Files {
@@ -104,8 +103,6 @@ func main() {
 	contents := parseFileContents(*templatePtr)
 	directory := *directoryPtr
 
-	fmt.Println(usr.HomeDir)
-
 	// Trim trailing `/` on directory name, this is added when forming the mkdir command later
 	directory = strings.TrimRight(directory, "/")
 	// Replace ~/ with absolute path to home directory
@@ -114,7 +111,6 @@ func main() {
 	rootPtr := &Folder{directory, []File{}, []Folder{}}
 
 	traverseDirectory(rootPtr, contents)
-
 	paths := recursivelyFormPathList(rootPtr, "")
 
 	for _, path := range paths {
