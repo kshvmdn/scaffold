@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	_ "os/exec"
+	"os/user"
 	"regexp"
 	"strings"
 )
@@ -19,6 +19,11 @@ type Folder struct {
 	Name    string
 	Files   []File
 	Folders []Folder
+}
+
+type Path struct {
+	FilePath    string
+	IsDirectory bool
 }
 
 func parseFileContents(path string) []string {
@@ -57,66 +62,77 @@ func traverseDirectory(rootPtr *Folder, contents []string) {
 	}
 }
 
-func mkdir(rootPtr *Folder) string {
-	if len(rootPtr.Folders) == 0 {
-		return rootPtr.Name
+func recursivelyFormPathList(dirPtr *Folder, parent string) []Path {
+	if parent != "" {
+		parent = fmt.Sprintf("%s/%s", parent, dirPtr.Name)
+	} else {
+		parent = dirPtr.Name
 	}
 
-	mkdirString := fmt.Sprintf("%s/{", rootPtr.Name)
+	parentPath := Path{parent, true}
 
-	for _, folder := range rootPtr.Folders {
-		mkdirString += fmt.Sprintf("%s,", mkdir(&folder))
+	paths := []Path{parentPath}
+
+	for _, file := range dirPtr.Files {
+		paths = append(paths, Path{
+			fmt.Sprintf("%s/%s", parent, file.Name),
+			false,
+		})
 	}
 
-	return fmt.Sprintf("%s}", mkdirString)
-}
-
-func touch(rootPtr *Folder) string {
-	if len(rootPtr.Files) == 0 && len(rootPtr.Folders) == 0 {
-		return ""
+	for _, folder := range dirPtr.Folders {
+		paths = append(paths, recursivelyFormPathList(&folder, parent)...)
 	}
 
-	touchString := fmt.Sprintf("%s/{", rootPtr.Name)
-
-	for _, file := range rootPtr.Files {
-		touchString += fmt.Sprintf("%s,", file.Name)
-	}
-
-	for _, folder := range rootPtr.Folders {
-		touchString += fmt.Sprintf("%s,", touch(&folder))
-	}
-
-	return fmt.Sprintf("%s}", touchString)
+	return paths
 }
 
 func main() {
-	configPtr := flag.String("config", "", "Config file")
+	templatePtr := flag.String("template", "", "Template file (directory structure)")
 	directoryPtr := flag.String("directory", ".", "Root directory")
 	flag.Parse()
 
-	if *configPtr == "" {
-		log.Fatal("Missing --config argument")
+	if *templatePtr == "" {
+		log.Fatal("Missing -template argument")
 	}
 
-	if _, err := os.Stat(*configPtr); os.IsNotExist(err) {
-		log.Fatal("Config file doesn't exist")
+	if _, err := os.Stat(*templatePtr); os.IsNotExist(err) {
+		log.Fatal("Template file doesn't exist")
 	}
 
-	contents := parseFileContents(*configPtr)
+	usr, _ := user.Current()
+	contents := parseFileContents(*templatePtr)
+	directory := *directoryPtr
+
+	fmt.Println(usr.HomeDir)
 
 	// Trim trailing `/` on directory name, this is added when forming the mkdir command later
-	directory := strings.TrimRight(*directoryPtr, "/")
+	directory = strings.TrimRight(directory, "/")
+	// Replace ~/ with absolute path to home directory
+	directory = strings.Replace(directory, "~/", fmt.Sprintf("%s/", usr.HomeDir), 1)
+
 	rootPtr := &Folder{directory, []File{}, []Folder{}}
 
 	traverseDirectory(rootPtr, contents)
 
-	mkdirCmd := mkdir(rootPtr)
-	touchCmd := touch(rootPtr)
+	paths := recursivelyFormPathList(rootPtr, "")
 
-	fmt.Printf("mkdir -p %s; touch %s\n", mkdirCmd, touchCmd)
+	for _, path := range paths {
+		func(path Path) {
+			fmt.Printf("Creating %s...", path.FilePath)
 
-	// err := exec.Command("mkdir", "-p", mkdirCmd, "; ", "touch", touchCmd).Run()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+			if path.IsDirectory {
+				err := os.MkdirAll(path.FilePath, os.ModePerm)
+				if err != nil {
+					log.Fatal(err)
+				}
+			} else {
+				_, err := os.Create(path.FilePath)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+			fmt.Println("done.")
+		}(path)
+	}
 }
