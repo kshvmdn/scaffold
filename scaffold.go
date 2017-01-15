@@ -118,21 +118,20 @@ func main() {
 	paths := recursivelyFormPathList(rootPtr, "")
 
 	for _, path := range paths {
-		func(path Path) {
-			fmt.Printf("Creating %s...", path.FilePath)
+		fmt.Printf("Creating %s...", path.FilePath)
 
-			if path.IsDirectory {
-				err := os.MkdirAll(path.FilePath, os.ModePerm)
-				if err != nil {
-					log.Fatal(err)
-				}
-			} else {
-				_, err := os.Create(path.FilePath)
-				if err != nil {
-					log.Fatal(err)
-				}
+		if path.IsDirectory {
+			err := os.MkdirAll(path.FilePath, os.ModePerm)
+			if err != nil {
+				log.Fatal(err)
 			}
-			fmt.Println("done.")
-		}(path)
+		} else {
+			_, err := os.Create(path.FilePath)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		fmt.Println("done.")
 	}
 }
